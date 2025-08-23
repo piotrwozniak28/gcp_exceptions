@@ -1,0 +1,19 @@
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Generated documentation
+SCHEMA.md
+schema_documentation.json
+
+# Generated Terraform variables
+terraform/terraform.tfvars.json
+.claude
+.terraform
+.terraform.*
