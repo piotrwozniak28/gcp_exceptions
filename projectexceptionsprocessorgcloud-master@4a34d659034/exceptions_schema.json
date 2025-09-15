@@ -1,0 +1,23 @@
+{
+    "version": "1.0.0",
+    "exceptions": [
+        {
+            "id": "100",
+            "type": "create_service_accounts",
+            "project_id_regex": "^prj-(rad|dev)-\\d{2}-googl2658-.{3}$",
+            "description": "Lab environment service accounts",
+            "spec": {
+                "service_accounts": [
+                    {
+                        "name_suffix": "api",
+                        "description": "API service account",
+                        "create_json_key": true,
+                        "iam_roles": [
+                            "roles/viewer"
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}
