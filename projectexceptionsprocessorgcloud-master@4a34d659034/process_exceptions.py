@@ -22,6 +22,7 @@ def process_exceptions(schema_data: dict, project_id: str, output_path: Path):
     logger.info(f"Processing {len(valid_exceptions)} exceptions: {exception_ids}")
 
     service_accounts = []
+    iam_policy_overrides = []
     matched_exceptions = []
     
     for exception in valid_exceptions:
@@ -29,10 +30,16 @@ def process_exceptions(schema_data: dict, project_id: str, output_path: Path):
             logger.info(f"Exception '{exception.id}' matches (regex: '{exception.project_id_regex}')")
             matched_exceptions.append(exception.id)
             
-            for sa in exception.spec.service_accounts:
-                sa_dict = sa.model_dump()
-                if sa_dict not in service_accounts:
-                    service_accounts.append(sa_dict)
+            if exception.type == "create_service_accounts":
+                for sa in exception.spec.service_accounts:
+                    sa_dict = sa.model_dump()
+                    if sa_dict not in service_accounts:
+                        service_accounts.append(sa_dict)
+            elif exception.type == "override_iam_policies":
+                for policy in exception.spec.boolean_policy_overrides:
+                    policy_dict = policy.model_dump()
+                    if policy_dict not in iam_policy_overrides:
+                        iam_policy_overrides.append(policy_dict)
         else:
             logger.info(f"Exception '{exception.id}' does not match (regex: '{exception.project_id_regex}')")
     
@@ -40,6 +47,7 @@ def process_exceptions(schema_data: dict, project_id: str, output_path: Path):
     if matched_exceptions:
         logger.info(f"Found {len(matched_exceptions)} matching exception(s): {matched_exceptions}")
         logger.info(f"Total service accounts to create: {len(service_accounts)}")
+        logger.info(f"Total IAM policy overrides to apply: {len(iam_policy_overrides)}")
     else:
         logger.info("No exceptions matched the project ID")
 
@@ -47,6 +55,7 @@ def process_exceptions(schema_data: dict, project_id: str, output_path: Path):
         "project_id": project_id,
         "region": region,
         "service_accounts": service_accounts,
+        "iam_policy_overrides": iam_policy_overrides,
     }
 
     with open(output_path, 'w') as f:

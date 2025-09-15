@@ -2,7 +2,7 @@
 Pydantic models for exceptions schema validation and documentation generation.
 """
 
-from typing import List, Literal
+from typing import List, Literal, Union
 from pydantic import BaseModel, Field
 import re
 import logging
@@ -62,6 +62,47 @@ class ServiceAccountSpec(BaseModel):
     )
 
 
+class BooleanPolicyOverride(BaseModel):
+    """
+    Boolean-type IAM organization policy override specification.
+    
+    This model represents a boolean organization policy that should be overridden
+    at the project level when the parent exception matches a project ID.
+    """
+    
+    policy_name: str = Field(
+        ...,
+        description="Name of the boolean organization policy to override",
+        examples=["iam.disableServiceAccountKeyCreation", "compute.requireShieldedVm"]
+    )
+    
+    enforced: bool = Field(
+        ...,
+        description="Whether to enforce (true) or disable (false) this boolean policy",
+        examples=[True, False]
+    )
+    
+    description: str = Field(
+        "",
+        description="Optional description explaining why this policy override is needed",
+        max_length=256,
+        examples=["Enable service account key creation for legacy applications", ""]
+    )
+
+
+class IamPolicySpec(BaseModel):
+    """
+    Specification of what IAM policies to override when an exception matches.
+    Currently supports boolean-type policies only. List-type policies may be added in future versions.
+    """
+    
+    boolean_policy_overrides: List[BooleanPolicyOverride] = Field(
+        ...,
+        description="List of boolean IAM organization policies to override for matching projects",
+        min_length=1
+    )
+
+
 class Exception(BaseModel):
     """
     Exception rule that matches project IDs against regex patterns and defines service accounts to create.
@@ -77,9 +118,9 @@ class Exception(BaseModel):
         examples=["100", "200", "003"]
     )
     
-    type: Literal["create_service_accounts"] = Field(
+    type: Literal["create_service_accounts", "override_iam_policies"] = Field(
         ...,
-        description="Type of exception - currently only 'create_service_accounts' is supported"
+        description="Type of exception - 'create_service_accounts' or 'override_iam_policies'"
     )
     
     project_id_regex: str = Field(
@@ -102,9 +143,9 @@ class Exception(BaseModel):
         ]
     )
     
-    spec: ServiceAccountSpec = Field(
+    spec: Union[ServiceAccountSpec, IamPolicySpec] = Field(
         ...,
-        description="Specification of what service accounts to create when this exception matches"
+        description="Specification of what to create/override when this exception matches (service accounts or IAM policies)"
     )
     
     def validate_regex(self) -> 'Exception':

@@ -18,6 +18,21 @@
                     }
                 ]
             }
+        },
+        {
+            "id": "200",
+            "type": "override_iam_policies",
+            "project_id_regex": "^prj-(rad|dev)-\\d{2}-fanta-.{3}$",
+            "description": "Enable service account key creation for lab environments",
+            "spec": {
+                "boolean_policy_overrides": [
+                    {
+                        "policy_name": "iam.disableServiceAccountKeyCreation",
+                        "enforced": false,
+                        "description": "Enable service account key creation for legacy applications"
+                    }
+                ]
+            }
         }
     ]
 }
