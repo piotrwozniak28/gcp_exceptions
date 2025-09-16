@@ -2,7 +2,7 @@
 Pydantic models for exceptions schema validation and documentation generation.
 """
 
-from typing import List, Literal, Union
+from typing import List, Literal, Union, Optional
 from pydantic import BaseModel, Field
 import re
 import logging
@@ -103,6 +103,67 @@ class IamPolicySpec(BaseModel):
     )
 
 
+class OrgPolicyOverride(BaseModel):
+    """
+    Organization policy override specification supporting both boolean and list policies.
+    """
+    
+    constraint: str = Field(
+        ...,
+        description="Name of the organization policy constraint to override",
+        examples=["iam.disableServiceAccountKeyCreation", "compute.vmExternalIpAccess"]
+    )
+    
+    policy_type: Literal["boolean", "list"] = Field(
+        ...,
+        description="Type of policy - 'boolean' for enforce/disable, 'list' for allow/deny values"
+    )
+    
+    enforced: Optional[bool] = Field(
+        None,
+        description="For boolean policies: whether to enforce (true) or disable (false) this policy"
+    )
+    
+    allow: Optional[List[str]] = Field(
+        None,
+        description="For list policies: list of allowed values"
+    )
+    
+    deny: Optional[List[str]] = Field(
+        None,
+        description="For list policies: list of denied values"
+    )
+    
+    allow_all: Optional[bool] = Field(
+        None,
+        description="For list policies: whether to allow all values"
+    )
+    
+    deny_all: Optional[bool] = Field(
+        None,
+        description="For list policies: whether to deny all values"
+    )
+    
+    description: str = Field(
+        "",
+        description="Optional description explaining why this policy override is needed",
+        max_length=256
+    )
+
+
+class OrgPolicySpec(BaseModel):
+    """
+    Specification of what organization policies to override when an exception matches.
+    Supports both boolean and list-type policies.
+    """
+    
+    org_policy_overrides: List[OrgPolicyOverride] = Field(
+        ...,
+        description="List of organization policies to override for matching projects",
+        min_length=1
+    )
+
+
 class Exception(BaseModel):
     """
     Exception rule that matches project IDs against regex patterns and defines service accounts to create.
@@ -118,9 +179,9 @@ class Exception(BaseModel):
         examples=["100", "200", "003"]
     )
     
-    type: Literal["create_service_accounts", "override_iam_policies"] = Field(
+    type: Literal["create_service_accounts", "override_iam_policies", "override_org_policies"] = Field(
         ...,
-        description="Type of exception - 'create_service_accounts' or 'override_iam_policies'"
+        description="Type of exception - 'create_service_accounts', 'override_iam_policies', or 'override_org_policies'"
     )
     
     project_id_regex: str = Field(
@@ -143,9 +204,9 @@ class Exception(BaseModel):
         ]
     )
     
-    spec: Union[ServiceAccountSpec, IamPolicySpec] = Field(
+    spec: Union[ServiceAccountSpec, IamPolicySpec, OrgPolicySpec] = Field(
         ...,
-        description="Specification of what to create/override when this exception matches (service accounts or IAM policies)"
+        description="Specification of what to create/override when this exception matches (service accounts, IAM policies, or org policies)"
     )
     
     def validate_regex(self) -> 'Exception':

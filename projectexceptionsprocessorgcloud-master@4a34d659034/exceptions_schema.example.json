@@ -21,15 +21,46 @@
         },
         {
             "id": "200",
-            "type": "override_iam_policies",
+            "type": "override_org_policies",
             "project_id_regex": "^prj-(rad|dev)-\\d{2}-fanta-.{3}$",
-            "description": "Enable service account key creation for lab environments",
+            "description": "Organization policy overrides for lab environments",
             "spec": {
-                "boolean_policy_overrides": [
+                "org_policy_overrides": [
                     {
-                        "policy_name": "iam.disableServiceAccountKeyCreation",
+                        "constraint": "iam.disableServiceAccountKeyCreation",
+                        "policy_type": "boolean",
                         "enforced": false,
                         "description": "Enable service account key creation for legacy applications"
+                    },
+                    {
+                        "constraint": "compute.vmExternalIpAccess",
+                        "policy_type": "list",
+                        "allow_all": true,
+                        "description": "Allow all external IP access for compute instances"
+                    },
+                    {
+                        "constraint": "compute.restrictSharedVpcSubnetworks",
+                        "policy_type": "list",
+                        "allow": [
+                            "projects/shared-vpc-project/regions/europe-west4/subnetworks/allowed-subnet-1",
+                            "projects/shared-vpc-project/regions/europe-west4/subnetworks/allowed-subnet-2"
+                        ],
+                        "description": "Allow specific shared VPC subnetworks"
+                    },
+                    {
+                        "constraint": "compute.trustedImageProjects",
+                        "policy_type": "list",
+                        "deny": [
+                            "projects/untrusted-project",
+                            "projects/deprecated-images"
+                        ],
+                        "description": "Deny images from untrusted projects"
+                    },
+                    {
+                        "constraint": "storage.uniformBucketLevelAccess",
+                        "policy_type": "boolean",
+                        "enforced": true,
+                        "description": "Enforce uniform bucket-level access for all storage buckets"
                     }
                 ]
             }
